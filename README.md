@@ -13,7 +13,7 @@ This repository contains solutions to the projects in the  [Deep Reinforcement L
 
 There's three projects in this repository use the following links or navigate to each directory to see the results of the finished projects:
 
-- [1 - Navigation DQN](https://github.com/lalopey/drl/1%20-%20Navigation%20-DQN)
+- [1 - Navigation DQN](https://github.com/lalopey/drl/tree/master/1%20-%20Navigation%20-DQN)
 
 ## Install
 
