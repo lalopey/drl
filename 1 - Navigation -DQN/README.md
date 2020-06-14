@@ -51,11 +51,11 @@ install all necessary packages and dependencies
 
 The problem is solved by using 1)Deep-Q Network (DQN), 2) Double Deep-Q Network (DDQN).
 
-The code for the agents can be found in [drltools/agent.py](https://github.com/lalopey/drl/blob/navigation/drltools/agent/agent.py)
-The code for the PyTorch models can be found in [drltools/model.py](https://github.com/lalopey/drl/blob/navigation/drltools/model/model.py)
+The code for the agents can be found in [drltools/agent.py](https://github.com/lalopey/drl/drltools/agent/agent.py)
+The code for the PyTorch models can be found in [drltools/model.py](https://github.com/lalopey/drl/drltools/model/model.py)
 
-To run the DQN or the DDQN run the [navigation_dqn.py](https://github.com/lalopey/drl/blob/navigation/1%20-%20Navigation%20-DQN/navigation_dqn.py)
-or [navigation_ddqn.py](https://github.com/lalopey/drl/blob/navigation/1%20-%20Navigation%20-DQN/navigation_dqn.py) files, respectively. Make sure you change the line:
+To run the DQN or the DDQN run the [navigation_dqn.py](https://github.com/lalopey/drl/1%20-%20Navigation%20-DQN/navigation_dqn.py)
+or [navigation_ddqn.py](https://github.com/lalopey/drl/1%20-%20Navigation%20-DQN/navigation_dqn.py) files, respectively. Make sure you change the line:
 
 **`env = UnityEnvironment(file_name="unity_environments/Banana_Linux/Banana.x86_64", worker_id=1)`**
 
