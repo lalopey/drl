@@ -1,0 +1,66 @@
+default_config = {'state_size': None,
+                  'action_size': None,
+                  'num_agents': 1,
+                  'seed': 42,
+                  'buffer_size': int(1e5),
+                  'batch_size': 64,
+                  'gamma': 0.99,
+                  'tau': 1e-3,
+                  'update_every_steps': 4,
+                  'learns_per_update': 1,
+                  }
+
+dqn_config = {**default_config,
+              **{'lr': 5e-4,
+                 'fc1_units': 64,
+                 'fc2_units': 64,
+                 'eps_start': 1.0,
+                 'eps_end': 0.01,
+                 'eps_decay': 0.995,
+                 }
+              }
+
+ddpg_config = {**default_config,
+               **{'batch_size': 256,
+                  'buffer_size': int(1e6),
+                  'weight_decay': 0,
+                  'actor_fc1_units': 256,
+                  'actor_fc2_units': 256,
+                  'critic_fcs1_units': 256,
+                  'critic_fc2_units': 256,
+                  'lr_actor': 1e-4,
+                  'lr_critic': 4e-4,
+                  'add_noise': True,
+                  'ou_mu': 0.,
+                  'ou_theta': 0.15,
+                  'ou_sigma': 0.1,
+                  'update_every_steps': 20,
+                  'learns_per_update': 10,
+                  'clip_gradient': True,
+                  'multi_critic': False,
+                  }
+               }
+
+maddpg_config = {**default_config,
+                 **{'batch_size': 256,
+                    'weight_decay': 0,
+                    'actor_fc1_units': 512,
+                    'actor_fc2_units': 256,
+                    'critic_fcs1_units': 512,
+                    'critic_fc2_units': 256,
+                    'lr_actor': 1e-4,
+                    'lr_critic': 6e-3,
+                    'gamma': 0.995,
+                    'add_noise': True,
+                    'ou_mu': 0.,
+                    'ou_theta': 0.15,
+                    'ou_sigma': 0.1,
+                    'num_agents': 2,
+                    'update_every_episode': 4,
+                    'learns_per_update': 3,
+                    'clip_gradient': False,
+                    'multi_critic': True,
+                    }
+                 }
+
+
