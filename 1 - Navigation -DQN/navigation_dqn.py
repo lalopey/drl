@@ -1,6 +1,5 @@
 from drltools.utils import trainer, dqn_config, get_env_size, plot_results
 from drltools.agent import DQNAgent
-
 from unityagents import UnityEnvironment
 
 env = UnityEnvironment(file_name="unity_environments/Banana_mac.app", worker_id=1)

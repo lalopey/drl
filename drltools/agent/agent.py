@@ -1,4 +1,4 @@
-from drltools.model.model import Actor, Critic, QNetwork
+from drltools.model import Actor, Critic, QNetwork
 from drltools.utils.agent_utils import ReplayBuffer, OUNoise
 
 import numpy as np

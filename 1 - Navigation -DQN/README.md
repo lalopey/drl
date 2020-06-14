@@ -34,7 +34,7 @@ over 100 consecutive episodes.
 
 ### Getting Started
 
-1. Follow the instructions in [lalopey/reinforcement-learning](https://github.com/lalopey/reinforcement-learning) to 
+1. Follow the instructions in [lalopey/drl](https://github.com/lalopey/drl) to 
 install all necessary packages and dependencies
 
 2. Download the environment from one of the links below. For this project, you will  **not**  need to install Unity - this it's already been built. You need only select the environment that matches your operating system:
@@ -49,16 +49,19 @@ install all necessary packages and dependencies
 
 ### Model
 
-The problem is solved by using a Deep-Q Network. The specifics of the model and the results can be found in:
+The problem is solved by using 1)Deep-Q Network (DQN), 2) Double Deep-Q Network (DDQN).
 
-To run the model, run the [navigation.py](https://github.com/lalopey/reinforcement-learning/blob/master/1%20-%20Navigation%20-DQN/navigation.py)
-file. Make sure you change the line:
+The code for the agents can be found in [drltools/agent.py](https://github.com/lalopey/drl/blob/navigation/drltools/agent/agent.py)
+The code for the PyTorch models can be found in [drltools/model.py](https://github.com/lalopey/drl/blob/navigation/drltools/model/model.py)
+
+To run the DQN or the DDQN run the [navigation_dqn.py](https://github.com/lalopey/drl/blob/navigation/1%20-%20Navigation%20-DQN/navigation_dqn.py)
+or [navigation_ddqn.py](https://github.com/lalopey/drl/blob/navigation/1%20-%20Navigation%20-DQN/navigation_dqn.py) files, respectively. Make sure you change the line:
 
 **`env = UnityEnvironment(file_name="unity_environments/Banana_Linux/Banana.x86_64", worker_id=1)`**
 
 to use the unity environment suited for your operating system.
 
-A trained model can be found in the `trained_agents` directory. 
+The trained models can be found in the `trained_agents` directory. 
 
 
         

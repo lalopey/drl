@@ -11,11 +11,9 @@ This repository contains solutions to the projects in the  [Deep Reinforcement L
 
 ## Projects
 
-There's three projects in this repository use the following links or navigate to each directory to see the results of the projects:
+There's three projects in this repository use the following links or navigate to each directory to see the results of the finished projects:
 
-- [1 - Navigation DQN](https://github.com/lalopey/reinforcement-learning/tree/master/1%20-%20Navigation%20-DQN)
-- [2 - Continuous Control DDPG](https://github.com/lalopey/reinforcement-learning/tree/master/2%20-%20Continuous%20Control%20-DDPG)
-- [3 - Collab Tennis - MADDPG](https://github.com/lalopey/reinforcement-learning/tree/master/3%20-%20Collab%20Tennis%20-%20MADDPG)
+- [1 - Navigation DQN](https://github.com/lalopey/drl/tree/navigation/1%20-%20Navigation%20-DQN)
 
 ## Install
 
@@ -34,6 +32,6 @@ Please follow the  [instructions in the DRLND GitHub repository](https://github.
 
 Clone this repository, and navigate to the root directory. Then, install the drltools package.
 
-- git clone https://github.com/lalopey/reinforcement-learning.git
+- git clone https://github.com/lalopey/drl.git
 - pip install .
 
