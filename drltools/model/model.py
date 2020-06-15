@@ -52,6 +52,7 @@ class Actor(nn.Module):
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.fc3 = nn.Linear(fc2_units, action_size)
 
+        # Batch normalization
         self.batch_normalize = batch_normalize
         if self.batch_normalize:
             self.bn1 = nn.BatchNorm1d(fc1_units)
@@ -73,6 +74,7 @@ class Actor(nn.Module):
         if self.batch_normalize:
             x = self.bn1(x)
         x = self.gate(self.fc2(x))
+        # tanh activation for action space in range -1,1
         return F.tanh(self.fc3(x))
 
 
@@ -94,6 +96,7 @@ class Critic(nn.Module):
         self.gate = gate
 
         if self.multi_critic:
+            # Concat state and action space on first layer for multiple interacting agent
             self.fc1 = nn.Linear(state_size + action_size, fc1_units)
             self.fc2 = nn.Linear(fc1_units, fc2_units)
             self.fc3 = nn.Linear(fc2_units, 1)
@@ -103,6 +106,7 @@ class Critic(nn.Module):
             self.fc2 = nn.Linear(fc1_units + action_size, fc2_units)
             self.fc3 = nn.Linear(fc2_units, 1)
 
+        # batch normalization
         self.batch_normalize = batch_normalize
         if self.batch_normalize:
             self.bn1 = nn.BatchNorm1d(fc1_units)
@@ -120,6 +124,7 @@ class Critic(nn.Module):
             state = torch.unsqueeze(state, 0)
 
         if self.multi_critic:
+            # Concat state and action space on first layer for multiple interacting agent
             x = torch.cat((state, action.float()), dim=1)
             x = self.gate(self.fc1(x))
             if self.batch_normalize:

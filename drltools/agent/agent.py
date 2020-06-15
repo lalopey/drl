@@ -218,7 +218,13 @@ class DoubleDQNAgent(DQNAgent):
 
 
 class DDPGAgent(BaseAgent):
+    """Implementation of Deep Deterministic Policy Gradient Agent"""
     def __init__(self, config):
+        """
+        :param config: Dictionary containing configuration parameters. The current implementation requires
+        the number of units in each of two layers for the actor and critic networks, fc1_units and fc2_units, as well as
+        other choices that can be found in utils/config.py
+        """
         super(DDPGAgent, self).__init__(config)
         self.lr_actor = config['lr_actor']
         self.lr_critic = config['lr_critic']
@@ -236,7 +242,7 @@ class DDPGAgent(BaseAgent):
         self.critic_fcs1_units = config['critic_fcs1_units']
         self.critic_fc2_units = config['critic_fc2_units']
 
-        # Actor Network (w/ Target Network)
+        # Actor local and target networks
         self.actor_local = Actor(self.state_size,
                                  self.action_size,
                                  self.seed,
@@ -251,13 +257,17 @@ class DDPGAgent(BaseAgent):
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(),
                                           lr=self.lr_actor)
 
+        # Have same initial parameters for actor and target networks
         for target, local in zip(self.actor_target.parameters(), self.actor_local.parameters()):
             target.data.copy_(local.data)
 
+        # Parameter for interacting multiple agents. If interacting, adjusts number of nodes in Critic
+        # network by number of agents involved
         mulitcritic_adjust = 1
         if self.multi_critic:
             mulitcritic_adjust = self.num_agents
 
+        # Critic local and target networks. multi_critic parameter for multiple interacting agents
         self.critic_local = Critic(self.state_size * mulitcritic_adjust,
                                    self.action_size * mulitcritic_adjust,
                                    self.seed,
@@ -287,7 +297,8 @@ class DDPGAgent(BaseAgent):
                              theta=self.ou_theta,
                              sigma=self.ou_sigma)
 
-        # Replay memory
+        # Replay memory. If multiple interacting agents, this is done in a class that handles
+        # all networks from multiple agents and how they sample from the buffer
         if not self.multi_critic:
             self.memory = ReplayBuffer(self.action_size,
                                        self.buffer_size,
@@ -295,7 +306,7 @@ class DDPGAgent(BaseAgent):
                                        self.seed)
 
     def step(self, states, actions, rewards, next_states, dones, i_episode):
-
+        # Add tuple to buffer
         self.memory.add(np.array(states).reshape(1,-1).squeeze(),
                         np.array(actions).reshape(1,-1).squeeze(),
                         rewards,
@@ -303,7 +314,7 @@ class DDPGAgent(BaseAgent):
                         dones)
 
         self.t_step = self.t_step + 1
-
+        # Play from buffer learns_per_update times every update_every_steps steps.
         if (len(self.memory) > self.batch_size) and (self.t_step % self.update_every_steps == 0):
 
             for _ in range(self.learns_per_update):
@@ -346,7 +357,7 @@ class DDPGAgent(BaseAgent):
         # Compute critic loss
         Q_expected = self.critic_local(states, actions)
         critic_loss = F.mse_loss(Q_expected, Q_targets)
-        # Minimize the loss (using gradient clipping)
+        # Minimize the loss (using gradient clipping if input in config)
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
         if self.clip_gradient:
@@ -372,11 +383,12 @@ class DDPGAgent(BaseAgent):
 
 
 class DDPGMultiAgent(DDPGAgent):
+    """Implementation of Deep Deterministic Policy Gradient Agent for multiple non-interacting agents"""
     def __init__(self, config):
         super(DDPGMultiAgent, self).__init__(config)
 
     def step(self, states, actions, rewards, next_states, dones, i_episode):
-
+        # Add tuples to replay buffer for all agents
         for i in range(self.num_agents):
             self.memory.add(states[i], actions[i], rewards[i], next_states[i], dones[i])
 
