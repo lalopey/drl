@@ -41,11 +41,13 @@ The problem is solved by using a Deep Deterministic Policy Gradient (DDPG) archi
 - The code for the agents can be found in [drltools/agent.py](https://github.com/lalopey/drl/blob/master/drltools/agent/agent.py)
 - The code for the PyTorch models can be found in [drltools/model.py](https://github.com/lalopey/drl/blob/master/drltools/model/model.py)
 
-To run the model, run the [continuous_control_ddpg_reacher.py](https://github.com/lalopey/drl/blob/master/2%20-%20Continuous%20Control%20-DDPG/continuous_control_ddpg_reacher.py)
+To run the model for a single agent, run the [continuous_control_ddpg_reacher.py](https://github.com/lalopey/drl/blob/master/2%20-%20Continuous%20Control%20-DDPG/continuous_control_ddpg_reacher.py)
 file. Make sure you change the line:
 
 **`env = UnityEnvironment(file_name="unity_environments/Reacher_Linux/Banana.x86_64", worker_id=1)`**
 
 to use the unity environment suited for your operating system.
 
-A trained model can be found in the `trained_agents` directory. 
+For the model with 20 agents, run To run the model for a single agent, run the [continuous_control_ddpg_reacher20.py](https://github.com/lalopey/drl/blob/master/2%20-%20Continuous%20Control%20-DDPG/continuous_control_ddpg_reacher20.py)
+
+A trained model for each environment can be found in the `trained_agents` directory. 
