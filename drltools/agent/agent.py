@@ -254,15 +254,19 @@ class DDPGAgent(BaseAgent):
         for target, local in zip(self.actor_target.parameters(), self.actor_local.parameters()):
             target.data.copy_(local.data)
 
-        self.critic_local = Critic(self.state_size * self.num_agents,
-                                   self.action_size * self.num_agents,
+        mulitcritic_adjust = 1
+        if self.multi_critic:
+            mulitcritic_adjust = self.num_agents
+
+        self.critic_local = Critic(self.state_size * mulitcritic_adjust,
+                                   self.action_size * mulitcritic_adjust,
                                    self.seed,
                                    self.critic_fcs1_units,
                                    self.critic_fc2_units,
                                    multi_critic=self.multi_critic).to(DEVICE)
 
-        self.critic_target = Critic(self.state_size * self.num_agents,
-                                    self.action_size * self.num_agents,
+        self.critic_target = Critic(self.state_size * mulitcritic_adjust,
+                                    self.action_size * mulitcritic_adjust,
                                     self.seed,
                                     self.critic_fcs1_units,
                                     self.critic_fc2_units,
@@ -284,7 +288,7 @@ class DDPGAgent(BaseAgent):
                              sigma=self.ou_sigma)
 
         # Replay memory
-        if self.num_agents == 1:
+        if not self.multi_critic:
             self.memory = ReplayBuffer(self.action_size,
                                        self.buffer_size,
                                        self.batch_size,
@@ -363,8 +367,30 @@ class DDPGAgent(BaseAgent):
         self.soft_update(self.actor_local, self.actor_target, self.tau)
 
     def report(self):
-        torch.save(self.actor_local.state_dict(), 'trained_agents/checkpoint_actor.pth')
-        torch.save(self.critic_local.state_dict(), 'trained_agents/checkpoint_critic.pth')
+        torch.save(self.actor_local.state_dict(), 'trained_agents/ddpg_reacher_checkpoint_actor.pth')
+        torch.save(self.critic_local.state_dict(), 'trained_agents/ddpg_reacher_checkpoint_critic.pth')
+
+
+class DDPGMultiAgent(DDPGAgent):
+    def __init__(self, config):
+        super(DDPGMultiAgent, self).__init__(config)
+
+    def step(self, states, actions, rewards, next_states, dones, i_episode):
+
+        for i in range(self.num_agents):
+            self.memory.add(states[i], actions[i], rewards[i], next_states[i], dones[i])
+
+        self.t_step = self.t_step + 1
+
+        if (len(self.memory) > self.batch_size) and (self.t_step % self.update_every_steps == 0):
+
+            for _ in range(self.learns_per_update):
+                experiences = self.memory.sample()
+                self.learn(experiences)
+
+    def report(self):
+        torch.save(self.actor_local.state_dict(), 'trained_agents/ddpg_reacher20_checkpoint_actor.pth')
+        torch.save(self.critic_local.state_dict(), 'trained_agents/ddpg_reacher20_checkpoint_critic.pth')
 
 
 class MaDDPGAgent(BaseAgent):
@@ -460,10 +486,10 @@ class MaDDPGAgent(BaseAgent):
 
     def report(self):
         for i, agent in enumerate(self.agents):
-            actor_local_filename = 'trained_agents/checkpoint_actor_local_' + str(i) + '.pth'
-            critic_local_filename = 'trained_agents/checkpoint_critic_local_' + str(i) + '.pth'
-            actor_target_filename = 'trained_agents/checkpoint_actor_target_' + str(i) + '.pth'
-            critic_target_filename = 'trained_agents/checkpoint_critic_target_' + str(i) + '.pth'
+            actor_local_filename = 'trained_agents/maddpg_tennis_checkpoint_actor_local_' + str(i) + '.pth'
+            critic_local_filename = 'trained_agents/maddpg_tennis_checkpoint_critic_local_' + str(i) + '.pth'
+            actor_target_filename = 'trained_agents/maddpg_tennis_checkpoint_actor_target_' + str(i) + '.pth'
+            critic_target_filename = 'trained_agents/maddpg_tennis_checkpoint_critic_target_' + str(i) + '.pth'
             torch.save(agent.actor_local.state_dict(), actor_local_filename)
             torch.save(agent.critic_local.state_dict(), critic_local_filename)
             torch.save(agent.actor_target.state_dict(), actor_target_filename)

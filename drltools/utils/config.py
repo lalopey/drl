@@ -6,7 +6,7 @@ default_config = {'state_size': None,
                   'batch_size': 64,
                   'gamma': 0.99,
                   'tau': 1e-3,
-                  'update_every_steps': 4,
+                  'update_every_steps': 2,
                   'learns_per_update': 1,
                   }
 
@@ -40,6 +40,11 @@ ddpg_config = {**default_config,
                   'multi_critic': False,
                   }
                }
+ddpgmulti_config = {**ddpg_config,
+                    'num_agents': 20,
+                    'update_every_steps': 4,
+                    'learns_per_update': 2,
+                    }
 
 maddpg_config = {**default_config,
                  **{'batch_size': 256,
