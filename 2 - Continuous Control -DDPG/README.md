@@ -14,7 +14,7 @@ In this environment, a double-jointed arm can move to target locations. A reward
 
 The observation space consists of 33 variables corresponding to position, rotation, velocity, and angular velocities of the arm. Each action is a vector with four numbers, corresponding to torque applicable to two joints. Every entry in the action vector should be a number between -1 and 1.
 
-The version used for this project contains a single agent.
+There are two versions of the environment, one with a single agent, an one with 20 agents. A solution for both versions is provided.
 
 #### Completion Criteria
 
@@ -48,6 +48,6 @@ file. Make sure you change the line:
 
 to use the unity environment suited for your operating system.
 
-For the model with 20 agents, run To run the model for a single agent, run the [continuous_control_ddpg_reacher20.py](https://github.com/lalopey/drl/blob/master/2%20-%20Continuous%20Control%20-DDPG/continuous_control_ddpg_reacher20.py)
+For the model with 20 agents, run the [continuous_control_ddpg_reacher20.py](https://github.com/lalopey/drl/blob/master/2%20-%20Continuous%20Control%20-DDPG/continuous_control_ddpg_reacher20.py) file.
 
 A trained model for each environment can be found in the `trained_agents` directory. 
