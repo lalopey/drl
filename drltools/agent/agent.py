@@ -42,9 +42,6 @@ class BaseAgent:
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
 
-    def reset(self):
-        pass
-
 
 class DQNAgent(BaseAgent):
     """Implementation of Deep Q-learning"""
@@ -72,14 +69,12 @@ class DQNAgent(BaseAgent):
 
         # Local Q-network
         self.qnetwork_local = QNetwork(self.state_size, 
-                                       self.action_size, 
-                                       self.seed,
+                                       self.action_size,
                                        self.fc1_units,
                                        self.fc2_units).to(DEVICE)
         # Target Q-network
         self.qnetwork_target = QNetwork(self.state_size,
                                         self.action_size,
-                                        self.seed,
                                         self.fc1_units,
                                         self.fc2_units).to(DEVICE)
         # Optimizer
@@ -93,6 +88,11 @@ class DQNAgent(BaseAgent):
                                    self.seed)
 
     def step(self, state, action, reward, next_state, done, i_episode):
+        """
+        Receives an experience (state, action, reward, next_state, done), adds the tuple to the memory buffer and
+        learns by sampling from the replay buffer
+        :param i_episode: episode number, used to update epsilon greedy policy
+        """
 
         # Check if its the first step of an episode and if so, update the epsilon of epsilon-greedy policy
         if self.current_episode != i_episode:
@@ -159,7 +159,7 @@ class DQNAgent(BaseAgent):
         self.soft_update(self.qnetwork_local, self.qnetwork_target, self.tau)
 
     def report(self):
-        # Save model parameters to a pth file
+        """Save model parameters to a pth file"""
         torch.save(self.qnetwork_local.state_dict(), 'trained_agents/dqn_checkpoint.pth')
 
 
@@ -181,7 +181,6 @@ class DoubleDQNAgent(DQNAgent):
         Params
         ======
             experiences (Tuple[torch.Variable]): tuple of (s, a, r, s', done) tuples
-            gamma (float): discount factor
         """
 
         states, actions, rewards, next_states, dones = experiences
@@ -213,7 +212,7 @@ class DoubleDQNAgent(DQNAgent):
         self.soft_update(self.qnetwork_local, self.qnetwork_target, self.tau)
 
     def report(self):
-        # Save model parameters to a pth file
+        """Save model parameters to a pth file"""
         torch.save(self.qnetwork_local.state_dict(), 'trained_agents/ddqn_checkpoint.pth')
 
 
@@ -245,12 +244,10 @@ class DDPGAgent(BaseAgent):
         # Actor local and target networks
         self.actor_local = Actor(self.state_size,
                                  self.action_size,
-                                 self.seed,
                                  self.actor_fc1_units,
                                  self.actor_fc2_units).to(DEVICE)
         self.actor_target = Actor(self.state_size,
                                   self.action_size,
-                                  self.seed,
                                   self.actor_fc1_units,
                                   self.actor_fc2_units).to(DEVICE)
 
@@ -270,14 +267,12 @@ class DDPGAgent(BaseAgent):
         # Critic local and target networks. multi_critic parameter for multiple interacting agents
         self.critic_local = Critic(self.state_size * mulitcritic_adjust,
                                    self.action_size * mulitcritic_adjust,
-                                   self.seed,
                                    self.critic_fcs1_units,
                                    self.critic_fc2_units,
                                    multi_critic=self.multi_critic).to(DEVICE)
 
         self.critic_target = Critic(self.state_size * mulitcritic_adjust,
                                     self.action_size * mulitcritic_adjust,
-                                    self.seed,
                                     self.critic_fcs1_units,
                                     self.critic_fc2_units,
                                     multi_critic=self.multi_critic).to(DEVICE)
@@ -306,6 +301,10 @@ class DDPGAgent(BaseAgent):
                                        self.seed)
 
     def step(self, states, actions, rewards, next_states, dones, i_episode):
+        """
+        Receives an experience (state, action, reward, next_state, done), adds the tuple to the memory buffer and
+        learns by sampling from the replay buffer
+        """
         # Add tuple to buffer
         self.memory.add(np.array(states).reshape(1,-1).squeeze(),
                         np.array(actions).reshape(1,-1).squeeze(),
@@ -333,6 +332,7 @@ class DDPGAgent(BaseAgent):
         return np.clip(action, -1, 1)
 
     def reset(self):
+        """Wrapper to reset noise"""
         self.noise.reset()
 
     def learn(self, experiences):
@@ -344,7 +344,6 @@ class DDPGAgent(BaseAgent):
         Params
         ======
             experiences (Tuple[torch.Tensor]): tuple of (s, a, r, s', done) tuples
-            gamma (float): discount factor
         """
         states, actions, rewards, next_states, dones = experiences
 
@@ -378,16 +377,19 @@ class DDPGAgent(BaseAgent):
         self.soft_update(self.actor_local, self.actor_target, self.tau)
 
     def report(self):
+        """Save model parameters for both the actor and the critic to a pth file"""
         torch.save(self.actor_local.state_dict(), 'trained_agents/ddpg_reacher_checkpoint_actor.pth')
         torch.save(self.critic_local.state_dict(), 'trained_agents/ddpg_reacher_checkpoint_critic.pth')
 
 
 class DDPGMultiAgent(DDPGAgent):
     """Implementation of Deep Deterministic Policy Gradient Agent for multiple non-interacting agents"""
-    def __init__(self, config):
-        super(DDPGMultiAgent, self).__init__(config)
 
     def step(self, states, actions, rewards, next_states, dones, i_episode):
+        """
+        Receives an experience (state, action, reward, next_state, done), adds the tuple to the memory buffer and
+        learns by sampling from the replay buffer
+        """
         # Add tuples to replay buffer for all agents
         for i in range(self.num_agents):
             self.memory.add(states[i], actions[i], rewards[i], next_states[i], dones[i])
@@ -401,64 +403,89 @@ class DDPGMultiAgent(DDPGAgent):
                 self.learn(experiences)
 
     def report(self):
+        """Save model parameters for both the actor and the critic to a pth file"""
         torch.save(self.actor_local.state_dict(), 'trained_agents/ddpg_reacher20_checkpoint_actor.pth')
         torch.save(self.critic_local.state_dict(), 'trained_agents/ddpg_reacher20_checkpoint_critic.pth')
 
 
 class MaDDPGAgent(BaseAgent):
-
+    """Implementation of Deep Deterministic Policy Gradient Agent for multiple interacting agents"""
     def __init__(self, config):
 
         super(MaDDPGAgent, self).__init__(config)
-
+        # Unlike in single DDPG, where we learn after a number of steps, in here we learn after update_every_episode
+        # so that we get the full interaction between the agents
         self.update_every_episode = config['update_every_episode']
-
+        # Instantiate one DDPGAgent for every interacting agent
         self.agents = [DDPGAgent(config) for i in range(self.num_agents)]
-
+        # Add memory to replay buffer. This class manages all experience memories from all agents
         self.memory = ReplayBuffer(self.action_size, self.buffer_size, self.batch_size, self.seed)
 
     def reset(self):
+        """Wrapper to reset noise for all agents"""
         for agent in self.agents:
             agent.reset()
 
     def act(self, states):
+        """Returns actions for given state as per current policy for all agents."""
         return [agent.act(state) for agent, state in zip(self.agents, states)]
 
     def step(self, states, actions, rewards, next_states, dones, i_episode):
-
+        """
+        Receives an experience (state, action, reward, next_state, done), adds the tuple to the memory buffer and
+        learns by sampling from the replay buffer
+        :param i_episode: episode number, used to keep track of when to learn
+        """
+        # Add tuples to replay buffer for all agents
         self.memory.add(np.array(states).reshape(1,-1).squeeze(),
                         np.array(actions).reshape(1,-1).squeeze(),
                         rewards,
                         np.array(next_states).reshape(1,-1).squeeze(),
                         dones)
-
+        # Update after every update_every_episode episodes
         if (len(self.memory) > self.batch_size) and (i_episode% self.update_every_episode == 0):
-
+            # Each player learns individually sampling from a common memory buffer
+            # Todo: Generalize to n interacting agents
             for _ in range(self.learns_per_update):
                 experiences = self.memory.sample()
                 self.learn(experiences, player=0)
                 experiences = self.memory.sample()
                 self.learn(experiences, player=1)
 
-    def mid_stack(self, x, dim):
+    def cat_exps(self, x, dim):
+        "Wrapper to concatenate elements of experience tuple for multiple agents"
         return torch.cat((torch.tensor(x[:, :dim]), torch.tensor(x[:, dim:])), dim=1).to(DEVICE)
 
     def learn(self, experiences, player):
+        """
+        Update policy and value parameters using given batch of experience tuples.
+        Learning takes place for one player but need information on both players.
+        Q_targets = r + γ * critic_target(next_state, actor_target(next_state))
+        where:
+            actor_target(state) -> action
+            critic_target(state, action) -> Q-value
+        Params
+        ======
+            experiences (Tuple[torch.Tensor]): tuple of (s, a, r, s', done) tuples
+            player (int) Which player is learning from the experience
+        """
 
         states, actions, rewards, next_states, done = experiences
-
+        # If player 1 is learning, need to roll the dataframe for the experience tuple
+        # so that we can use the same framework for him to learn as player 0.
+        # As if we were flipping the game screen depending on the player
         if player == 1:
             states = np.roll(states, self.state_size,1)
             actions = np.roll(actions, self.action_size,1)
             next_states = np.roll(next_states, self.state_size,1)
-
+        # Split states from player learning and other player
         own_states = torch.tensor(states[:, :self.state_size]).to(DEVICE)
         other_states = torch.tensor(states[:, self.state_size:]).to(DEVICE)
-
-        all_states = self.mid_stack(states, self.state_size)
-        all_actions = self.mid_stack(actions, self.action_size)
-        all_next_states = self.mid_stack(next_states, self.state_size)
-
+        # Concatenate the state, action, and next_states for both players
+        all_states = self.cat_exps(states, self.state_size)
+        all_actions = self.cat_exps(actions, self.action_size)
+        all_next_states = self.cat_exps(next_states, self.state_size)
+        # Choose the DDPGAgent for the player learning
         agent = self.agents[player]
 
         # ---------------------------- update critic ---------------------------- #
@@ -497,6 +524,7 @@ class MaDDPGAgent(BaseAgent):
         agent.soft_update(agent.actor_local, agent.actor_target, self.tau)
 
     def report(self):
+        """Save model parameters for both the actor and the critic for each player to a pth file"""
         for i, agent in enumerate(self.agents):
             actor_local_filename = 'trained_agents/maddpg_tennis_checkpoint_actor_local_' + str(i) + '.pth'
             critic_local_filename = 'trained_agents/maddpg_tennis_checkpoint_critic_local_' + str(i) + '.pth'
