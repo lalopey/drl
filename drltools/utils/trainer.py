@@ -1,11 +1,38 @@
-from collections import deque
 import numpy as np
-import pandas as pd
+from collections import deque
 
 import matplotlib.pyplot as plt
 
 
-def trainer(env, agent, n_episodes, max_t, solved_score):
+def trainer(env, config, agent_class, n_episodes, max_t, solved_score, title=''):
+    """
+    :param env: Unity environment
+    :param config: Dictionary with config specifics, for examples look at drtools.utils.config.py
+    :param agent_class: Agent class. For examples look at drltools/agent/agent.py
+    :param n_episodes: Maximum number of episodes to train the agent
+    :param max_t: Maximum number of steps per episode
+    :param solved_score: Sufficient score as an average of the previous 100 episodes
+    :param title: (str) Plot's title
+    :return:
+    """
+
+    config['action_size'], config['state_size'] = get_env_size(env)
+    agent = agent_class(config)
+    scores = _trainer(env, agent, n_episodes=n_episodes, max_t=max_t, solved_score=solved_score)
+    plot_results(scores, title)
+
+    env.close()
+
+
+def _trainer(env, agent, n_episodes, max_t, solved_score):
+    """
+    Wrapper to train unity agents with reinforcement learning algorithms
+    :param env: Unity environment
+    :param agent: Agent class. For examples look at drltools/agent/agent.py
+    :param n_episodes: Maximum number of episodes to train the agent
+    :param max_t: Maximum number of steps per episode
+    :param solved_score: Sufficient score as an average of the previous 100 episodes
+    """
 
     brain_name = env.brain_names[0]
 
@@ -22,7 +49,7 @@ def trainer(env, agent, n_episodes, max_t, solved_score):
 
         states = env_info.vector_observations[0:num_agents]
         scores = np.zeros(num_agents)
-
+        # Step until a maximum number of steps is achieved or the episode is done
         for steps in range(max_t):
 
             actions = agent.act(states)
@@ -62,6 +89,11 @@ def trainer(env, agent, n_episodes, max_t, solved_score):
 
 
 def get_env_size(env):
+    """
+    Wrapper to output action and state size from a unity environment
+    :param env: Unity environment
+    :return(int,int): action and state size
+    """
 
     brain_name = env.brain_names[0]
     brain = env.brains[brain_name]
@@ -73,9 +105,33 @@ def get_env_size(env):
     return action_size, state_size
 
 
-def plot_results(scores, title):
+def moving_average(data, window=100):
+    """
+    Calculates moving average for a given list. If the number of data points is less than window.
+    calculates the average up until that point. The returned list will be the same size as the original
+    :param data: (list) list of data points
+    :param window: (int) moving average window
+    :return: (list) list of moving averages
+    """
 
-    scores_rolling = pd.Series(scores).rolling(100).mean()
+    queue = deque(maxlen=window)
+    ma = []
+
+    for d in data:
+        queue.append(d)
+        ma.append(sum(queue) / len(queue))
+
+    return ma
+
+
+def plot_results(scores, title):
+    """
+    Wrapper to plot results of training
+    :param scores: (list[float]) List of scores
+    :param title: (str) Plot's title
+    """
+
+    scores_rolling = moving_average(scores)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.plot(np.arange(len(scores)), scores)
