@@ -3,7 +3,7 @@ from drltools.agent.agent import MaDDPGAgent
 from unityagents import UnityEnvironment
 
 
-env = UnityEnvironment(file_name="unity_environments/Tennis_mac.app", worker_id=1)
+env = UnityEnvironment(file_name="unity_environments/Tennis_Linux/Tennis.x86_64", worker_id=1)
 config = maddpg_config
 agent_class = MaDDPGAgent
 n_episodes = 10000
