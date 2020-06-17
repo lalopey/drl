@@ -445,7 +445,6 @@ class MaDDPGAgent(BaseAgent):
         # Update after every update_every_episode episodes
         if (len(self.memory) > self.batch_size) and (i_episode% self.update_every_episode == 0):
             # Each player learns individually sampling from a common memory buffer
-            # Todo: Generalize to n interacting agents
             for _ in range(self.learns_per_update):
                 experiences = self.memory.sample()
                 self.learn(experiences, player=0)
@@ -471,7 +470,7 @@ class MaDDPGAgent(BaseAgent):
         """
 
         states, actions, rewards, next_states, done = experiences
-        # If player 1 is learning, need to roll the dataframe for the experience tuple
+        # If player 1 is learning, need to roll the DataFrame for the experience tuple
         # so that we can use the same framework for him to learn as player 0.
         # As if we were flipping the game screen depending on the player
         if player == 1:
