@@ -1,5 +1,5 @@
 from drltools.model import Actor, Critic, QNetwork
-from drltools.utils.agent_utils import ReplayBuffer, OUNoise
+from drltools.utils.agent_utils import PriorityReplayBuffer, ReplayBuffer, OUNoise
 
 import numpy as np
 import random
@@ -41,6 +41,9 @@ class BaseAgent:
         """
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
+
+    def reset(self):
+        pass
 
 
 class DQNAgent(BaseAgent):
@@ -162,6 +165,136 @@ class DQNAgent(BaseAgent):
         """Save model parameters to a pth file"""
         torch.save(self.qnetwork_local.state_dict(), 'trained_agents/dqn_checkpoint.pth')
 
+class DQNPriorityAgent(BaseAgent):
+    """Implementation of Deep Q-learning"""
+
+    def __init__(self, config):
+        """
+        :param config: Dictionary containing configuration parameters. The current implementation requires
+        the number of units in each of two layers for the q-network, fc1_units and fc2_units, as well as
+        values a eps_start, eps_end, and eps_decay to define an epsilon greedy policy.  A sample configuration can
+        be found in utils/config.py
+        """
+        super(DQNPriorityAgent, self).__init__(config)
+
+        # Q-network parameters
+        self.lr = config['lr']
+        self.fc1_units = config['fc1_units']
+        self.fc2_units = config['fc2_units']
+        # Epsilon-greedy parameters
+        self.eps_start = config['eps_start']
+        self.eps_end = config['eps_end']
+        self.eps_decay = config['eps_decay']
+
+        self.eps = self.eps_start
+        self.current_episode = 1
+
+        # Local Q-network
+        self.qnetwork_local = QNetwork(self.state_size,
+                                       self.action_size,
+                                       self.fc1_units,
+                                       self.fc2_units).to(DEVICE)
+        # Target Q-network
+        self.qnetwork_target = QNetwork(self.state_size,
+                                        self.action_size,
+                                        self.fc1_units,
+                                        self.fc2_units).to(DEVICE)
+        # Optimizer
+        self.optimizer = optim.Adam(self.qnetwork_local.parameters(),
+                                    lr=self.lr)
+
+        # Replay memory
+        self.memory = PriorityReplayBuffer(self.action_size,
+                                    self.buffer_size,
+                                   self.batch_size,
+                                   self.seed)
+
+    def step(self, state, action, reward, next_state, done, i_episode):
+        """
+        Receives an experience (state, action, reward, next_state, done), adds the tuple to the memory buffer and
+        learns by sampling from the replay buffer
+        :param i_episode: episode number, used to update epsilon greedy policy
+        """
+
+        # Check if its the first step of an episode and if so, update the epsilon of epsilon-greedy policy
+        if self.current_episode != i_episode:
+            self.current_episode = i_episode
+            self.eps = max(self.eps_end, self.eps_decay * self.eps)
+
+       # Calculate TD update for Prioritized experience replay
+
+        Q_target_max = self.qnetwork_target(torch.from_numpy(next_state).float()).max()
+        TD_update = reward[0] + (self.gamma * Q_target_max * (1 - int(done[0])))
+
+        # Add tuple to buffer
+        self.memory.add(state, action, reward, next_state, done, TD_update)
+
+        self.t_step = self.t_step + 1
+        # Play from buffer learns_per_update times every update_every_steps steps.
+        if (len(self.memory) > self.batch_size) and (self.t_step % self.update_every_steps == 0):
+
+            for _ in range(self.learns_per_update):
+                experiences = self.memory.sample()
+                self.learn(experiences)
+
+    def act(self, state):
+        """Returns actions for given state as per current policy.
+
+        Params
+        ======
+            state (array_like): current state
+            eps (float): epsilon, for epsilon-greedy action selection
+        """
+        state = torch.from_numpy(state).float().unsqueeze(0).to(DEVICE)
+        self.qnetwork_local.eval()
+        with torch.no_grad():
+            action_values = self.qnetwork_local(state)
+        self.qnetwork_local.train()
+
+        # Epsilon-greedy action selection
+        if random.random() > self.eps:
+            return np.argmax(action_values.cpu().data.numpy())
+        else:
+            return random.choice(np.arange(self.action_size))
+
+    def learn(self, experiences):
+        """Update value parameters using given batch of experience tuples.
+
+        Params
+        ======
+            experiences (Tuple[torch.Variable]): tuple of (s, a, r, s', done, td) tuples
+            gamma (float): discount factor
+        """
+        states, actions, rewards, next_states, dones, weights = experiences
+
+        # Get max predicted Q values (for next states) from target model
+        Q_target_max = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
+        # Compute Q targets for current states
+        TD_update = rewards + (self.gamma * Q_target_max * (1 - dones))
+
+        # Get expected Q values from local model
+        Q_expected = self.qnetwork_local(states).gather(1, actions.long())
+
+        # PyTorch
+        # (torch.FloatTensor(is_weights) * F.mse_loss(pred, target)).mean()
+
+        # Compute loss
+        loss = (weights * F.mse_loss(Q_expected, TD_update)).mean()
+        # Minimize the loss
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        # Add updated samples with new TD targets to Experience Buffer
+        self.memory.update_tds(TD_update)
+
+        # ------------------- update target network ------------------- #
+        self.soft_update(self.qnetwork_local, self.qnetwork_target, self.tau)
+
+    def report(self):
+        """Save model parameters to a pth file"""
+        torch.save(self.qnetwork_local.state_dict(), 'trained_agents/dqnpriority_checkpoint.pth')
+
 
 class DoubleDQNAgent(DQNAgent):
     """Implementation of Deep Q-learning"""
@@ -199,7 +332,6 @@ class DoubleDQNAgent(DQNAgent):
         TD_update = rewards + (self.gamma * Q_target_max * (1 - dones))
 
         Q_expected = self.qnetwork_local(states).gather(1, actions.long())
-
 
         # Compute loss
         loss = F.mse_loss(Q_expected, TD_update)
